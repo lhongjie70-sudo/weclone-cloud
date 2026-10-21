@@ -1,3 +1,10 @@
+> 本目录是 [WeClone](https://github.com/xming521/WeClone) 的子项目：
+> 复用其数据解析能力，把打分 / 人设 / 对话换成纯 API 实现，无需 GPU。
+> 独立仓库：https://github.com/lhongjie70-sudo/weclone-cloud
+>
+> **在 WeClone 仓库内使用**：父目录就是 WeClone，直接 `uv sync`，
+> 不需要运行 `setup.cmd`（那会再克隆一份 WeClone），下文路径里的 `app\` 换成 `..\`。
+
 # weclone-cloud
 
 把「聊天记录 → 清洗打分 → 人设/微调 → 微信或网页分身」整条链路做成**纯 API 驱动、无需显卡**的一键方案。
@@ -19,6 +26,19 @@
 - **一套接口，多个前端**：OpenAI 兼容 `/v1/chat/completions`，可直接接 LangBot、AstrBot、任何 OpenAI SDK，也自带网页聊天。
 - **微信落地**：Docker 跑 LangBot + WeChatPadPro，含两处适配器补丁（去重、异常修复），并做了拟人节奏与防封配置。
 - **可复现**：打分有内容寻址缓存和断点续跑，导出带 `manifest.json`（条数、丢弃原因、token、sha256）。
+
+---
+
+## 测试版本（升级前先对照）
+
+| 组件 | 已验证版本 | 固定方式 |
+|---|---|---|
+| WeClone | `master@d4af5ba`（2026-10-18） | 子目录跟随父仓库 |
+| LangBot | **v4.11.1** | `start-langbot-docker.cmd`；镜像建议改成具体 tag |
+| WeChatPad-Docker | commit `c6d1b7a` | `tools/prepare_wechatpad.ps1 -Ref`（已默认钉住） |
+| Python | 3.12.x | `.venv` |
+
+升级任何一项后，按 [维护手册](docs/maintenance.md) 第三节逐项复验（适配器补丁、compose 挂载、协议端接口）。
 
 ---
 
@@ -160,6 +180,7 @@ weclone-cloud/
 | [docs/architecture.md](docs/architecture.md) | 与 WeClone 的对应关系、关键取舍 |
 | [docs/providers.md](docs/providers.md) | OpenAI / 百炼 / 本地模型等配置 |
 | [docs/langbot.md](docs/langbot.md) | LangBot 接入细节 |
+| [docs/maintenance.md](docs/maintenance.md) | **长期维护**：版本矩阵、升级步骤、回归检查、发布流程 |
 
 ---
 
@@ -181,4 +202,5 @@ weclone-cloud/
 
 ## License
 
-MIT（WeClone 部分遵循其原始协议，见 `app/` 内许可）。
+AGPL-3.0，与上游 WeClone 保持一致。
+独立仓库：https://github.com/lhongjie70-sudo/weclone-cloud

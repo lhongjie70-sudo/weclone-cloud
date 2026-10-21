@@ -4,6 +4,10 @@
 
 > 目标：微信小号收到消息 → LangBot → 本机分身（你的人设）→ DeepSeek → 回微信。
 
+> **路径说明**：本文以**独立仓库**为前提。
+> 若在 WeClone 仓库内使用（`WeClone/weclone-cloud/`），把下文所有 `app\` 换成 `..\`，
+> 并跳过第 1 节的 `setup.cmd`——父目录已经是 WeClone，直接 `uv sync` 即可。
+
 ---
 
 ## 0. 前置条件
@@ -43,6 +47,17 @@ cd weclone-cloud
 3. 安装 WeClone 基础依赖 + `presidio`（脱敏）+ `zh_core_web_sm`（中文分词）；
 4. 打一个补丁：WeClone 里 spaCy 写死 `n_process=24`，Windows 上会 `MemoryError`，改成 1。
 
+### 1.1 两种使用位置（先确认你在哪）
+
+| 你在哪 | 安装方式 | 数据集路径 | `make-dataset` 在哪跑 |
+|---|---|---|---|
+| **独立仓库**（clone 的 `weclone-cloud`） | `.\bootstrap.ps1 -Install` | `app\dataset\...` | `cd app` |
+| **WeClone 仓库内**（`WeClone\weclone-cloud\`） | 跳过，直接 `uv sync` | `dataset\...` | 仓库根目录 |
+
+脚本会自动判断：检测到上级目录就是 WeClone 仓库时，**跳过复制、复用父仓库**，不会重复下载。
+
+下面按「独立仓库」写；在 WeClone 仓库内使用时，把 `app\` 换成 `..\`。
+
 > 想在本机跑 LoRA 训练（需要 NVIDIA 显卡，约 10GB）才追加 `-Full`。
 
 验证：
@@ -56,15 +71,44 @@ cd weclone-cloud
 
 ## 2. 准备数据
 
-### 2.1 微信导出 → CSV
+### 2.1 聊天记录到底放哪个文件夹
 
-支持的形态：WeClone CSV / Telegram / Alpha 导出 / 微信 CSV / SQLite。先让工具认一下：
+这一步最容易踩坑：`make-dataset` **只认固定目录**，放错地方它会直接说"没有数据"，而且不告诉你它找过哪儿。
+
+在**运行 `make-dataset` 的那个仓库根目录**下，目录必须是这样：
+
+```
+WeClone/                         ← 独立仓库时是 weclone-cloud/app/
+└─ dataset/
+   ├─ csv/                       ← 微信记录（WeClone 原生 CSV）
+   │  ├─ 张三/
+   │  │  └─ 张三.csv
+   │  └─ 李四/
+   │     └─ 李四.csv
+   └─ telegram/                  ← Telegram 导出
+      └─ ...
+```
+
+| 数据来源 | 放到哪里 | 说明 |
+|---|---|---|
+| 微信（已经是 CSV） | `dataset/csv/<联系人>/<联系人>.csv` | **一个联系人一个子目录**，不要把所有 CSV 平铺在 `csv/` 下 |
+| Alpha 导出（`Alpha导出-xxx/<名字>/<名字>.csv`） | 先跑 `tools/from_alpha.py`，它自动放进上面的位置 | 见 2.3 |
+| Telegram | `dataset/telegram/` | 把导出的 `result.json` / HTML 直接放进去 |
+| 微信 SQLite / 其他格式 | 先跑 `tools/inspect_data.py` 判断 | 见 2.2 |
+
+> 路径对照：独立仓库是 `weclone-cloud\app\dataset\csv\`；在 WeClone 仓库内是 `WeClone\dataset\csv\`。
+
+### 2.2 先让工具认一下格式
 
 ```powershell
 .\.venv\Scripts\python.exe tools\inspect_data.py "D:\你的导出目录"
 ```
 
-如果是 **Alpha 导出**（每个联系人一个文件夹，内含 `<名字>.csv`，列有 `type_name/is_sender/msg/CreateTime`）：
+它会告诉你属于「WeClone SFT / OpenAI 问答数组 / 微信 CSV / Telegram / SQLite / 加密文件」中的哪一种，以及下一步该跑什么。
+
+### 2.3 Alpha 导出 → WeClone CSV
+
+Alpha 导出的结构是「每个联系人一个文件夹，内含 `<名字>.csv`」，列通常有 `type_name / is_sender / msg / CreateTime`：
 
 ```powershell
 .\.venv\Scripts\python.exe tools\from_alpha.py `
@@ -72,20 +116,27 @@ cd weclone-cloud
   --dst "app\dataset\csv"
 ```
 
-它会丢掉非文本行（表情包是 XML）并打印保留/丢弃统计，产物放到 `app\dataset\csv\<联系人>\<联系人>.csv`。
+产物就是 2.1 要求的结构：
 
-### 2.2 生成 SFT 数据集
-
-```powershell
-cd app
-..\.venv\Scripts\python.exe -m weclone_cloud.cli --help   # 确认 CLI 可用后返回根目录
+```
+app\dataset\csv\<联系人>\<联系人>.csv
 ```
 
-WeClone 的 `make-dataset` 用它自己的环境执行：
+它会丢掉非文本行（表情包是 `<msg><emoji…>` 这类 XML）并打印保留/丢弃统计。
+
+CSV 至少要有这五列，缺了 `make-dataset` 会解析失败：
+
+```
+CreateTime, type_name, is_sender, talker, msg
+```
+
+### 2.4 生成 SFT 数据集
+
+进入 WeClone 目录执行（它用的是 WeClone 自己的环境）：
 
 ```powershell
 cd app
-# 确认 settings.jsonc 里 clean_dataset.enable_clean = false（打分交给下一步）
+# settings.jsonc 里确认 clean_dataset.enable_clean = false（清洗交给下一步的打分）
 weclone-cli make-dataset
 ```
 
@@ -95,7 +146,7 @@ weclone-cli make-dataset
 Chat record processing successful, obtained 2925 data entries
 ```
 
-产物：`app\dataset\res_csv\sft\sft-my.json`。
+产物：**`app\dataset\res_csv\sft\sft-my.json`** —— 这就是后面 `score` / `persona` 的输入。
 
 > `length_cdf` 报 `No module named 'fire'`、`LTP` 相关失败都可以忽略——它们只影响统计与分词增强，不影响数据。
 
