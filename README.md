@@ -1,11 +1,49 @@
+# weclone-cloud
+
+**中文** | [English](#english)
+
+> 无需显卡的聊天记录分身：用 DeepSeek 等 API 完成打分、人设生成与对话，
+> 经 LangBot + 微信协议端在微信里替你回消息。附安装教程与运维手册。
+
+---
+
+<a id="english"></a>
+
+## English
+
+**Turn your chat history into an AI twin — no GPU required.**
+
+A subproject of [WeClone](https://github.com/xming521/WeClone). It reuses WeClone's
+dataset parsing, then replaces scoring / persona / inference with OpenAI-compatible APIs:
+
+- **Scoring** — API calls instead of local vLLM, so it runs on Windows or any machine without an NVIDIA GPU
+- **Persona** — style rules distilled from your highest-scored conversations, no weight training
+- **Serving** — a small authenticated proxy; the model stays in the cloud
+- **Deployment** — optional LangBot + WeChatPadPro recipe for personal WeChat
+- **Maintenance** — pinned third-party versions, upgrade checklist, dual-repo release flow
+
+Quick start (Windows):
+
+```powershell
+git clone https://github.com/lhongjie70-sudo/weclone-cloud.git
+cd weclone-cloud
+.\setup.cmd          # pulls WeClone, creates .venv, installs deps
+# edit secrets.local.cmd -> WECLONE_API_KEY=sk-...
+.\start-chat.cmd     # opens http://127.0.0.1:8010/
+```
+
+Docs: [install](docs/install.md) · [runbook](docs/runbook.md) · [maintenance](docs/maintenance.md)
+
+---
+
+## 中文
+
 > 本目录是 [WeClone](https://github.com/xming521/WeClone) 的子项目：
 > 复用其数据解析能力，把打分 / 人设 / 对话换成纯 API 实现，无需 GPU。
 > 独立仓库：https://github.com/lhongjie70-sudo/weclone-cloud
 >
 > **在 WeClone 仓库内使用**：父目录就是 WeClone，直接 `uv sync`，
 > 不需要运行 `setup.cmd`（那会再克隆一份 WeClone），下文路径里的 `app\` 换成 `..\`。
-
-# weclone-cloud
 
 把「聊天记录 → 清洗打分 → 人设/微调 → 微信或网页分身」整条链路做成**纯 API 驱动、无需显卡**的一键方案。
 
