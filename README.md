@@ -12,7 +12,7 @@
 [![GPU](https://img.shields.io/badge/GPU-not%20required-brightgreen.svg)](#)
 [![Based on WeClone](https://img.shields.io/badge/based%20on-WeClone-8A2BE2.svg)](https://github.com/xming521/WeClone)
 
-[**中文**](#chinese) · [**English**](#english)
+**中文** · [**English** →](README.en.md)
 
 </div>
 
@@ -21,41 +21,6 @@
 -->
 
 ---
-
-<a id="english"></a>
-
-## English
-
-**Turn your chat history into an AI twin — no GPU required.**
-
-A subproject of [WeClone](https://github.com/xming521/WeClone). It reuses WeClone's
-dataset parsing, then replaces scoring / persona / inference with OpenAI-compatible APIs:
-
-- **Scoring** — API calls instead of local vLLM, so it runs on Windows or any machine without an NVIDIA GPU
-- **Persona** — style rules distilled from your highest-scored conversations, no weight training
-- **Serving** — a small authenticated proxy; the model stays in the cloud
-- **Deployment** — optional LangBot + WeChatPadPro recipe for personal WeChat
-- **Maintenance** — pinned third-party versions, upgrade checklist, dual-repo release flow
-
-Quick start (Windows):
-
-```powershell
-git clone https://github.com/lhongjie70-sudo/weclone-cloud.git
-cd weclone-cloud
-.\setup.cmd          # pulls WeClone, creates .venv, installs deps
-# edit secrets.local.cmd -> WECLONE_API_KEY=sk-...
-.\start-chat.cmd     # opens http://127.0.0.1:8010/
-```
-
-Docs: [install](docs/install.md) · [runbook](docs/runbook.md) · [maintenance](docs/maintenance.md)
-
-[**→ 中文版**](#chinese)
-
----
-
-<a id="chinese"></a>
-
-## 中文
 
 > 本目录是 [WeClone](https://github.com/xming521/WeClone) 的子项目：
 > 复用其数据解析能力，把打分 / 人设 / 对话换成纯 API 实现，无需 GPU。
@@ -266,6 +231,6 @@ AGPL-3.0，与上游 WeClone 保持一致。
 
 <div align="center">
 
-[**↑ 回到顶部**](#weclone-cloud) · [**English**](#english)
+[**↑ 回到顶部**](#weclone-cloud) · [**English** →](README.en.md)
 
 </div>
