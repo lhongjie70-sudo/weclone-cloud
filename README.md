@@ -1,9 +1,24 @@
+<div align="center">
+
 # weclone-cloud
+
+**把聊天记录变成会说话的你** · Turn your chat logs into an AI twin
+
+无需显卡 · 纯 API 驱动 · 可接微信 · 附完整运维手册
+
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
+[![Platform](https://img.shields.io/badge/platform-Windows-0078D4.svg?logo=windows&logoColor=white)](#)
+[![GPU](https://img.shields.io/badge/GPU-not%20required-brightgreen.svg)](#)
+[![Based on WeClone](https://img.shields.io/badge/based%20on-WeClone-8A2BE2.svg)](https://github.com/xming521/WeClone)
 
 **中文** | [English](#english)
 
-> 无需显卡的聊天记录分身：用 DeepSeek 等 API 完成打分、人设生成与对话，
-> 经 LangBot + 微信协议端在微信里替你回消息。附安装教程与运维手册。
+</div>
+
+<!-- 有截图后取消注释，并把图片放到 docs/images/demo.png
+![效果演示](docs/images/demo.png)
+-->
 
 ---
 
