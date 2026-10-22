@@ -1,15 +1,16 @@
 <div align="center">
 
-# weclone-cloud
+# 🧬 weclone-cloud
 
-**把聊天记录变成会说话的你** · Turn your chat logs into an AI twin
+**把聊天记录变成会说话的你** · *Turn your chat logs into an AI twin*
 
-无需显卡 · 纯 API 驱动 · 可接微信 · 附完整运维手册
+不用显卡 · 纯 API · 能接微信 · 有完整运维手册
 
-[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![Python 3.12](https://img.shields.io/badge/python-3.12-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
-[![Platform](https://img.shields.io/badge/platform-Windows-0078D4.svg?logo=windows&logoColor=white)](#)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-3da639.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Python](https://img.shields.io/badge/python-3.12-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-0078D4.svg?logo=windows&logoColor=white)](#)
 [![GPU](https://img.shields.io/badge/GPU-not%20required-brightgreen.svg)](#)
+[![WeChat](https://img.shields.io/badge/WeChat-LangBot%20%2B%20WeChatPad-07C160.svg)](#)
 [![Based on WeClone](https://img.shields.io/badge/based%20on-WeClone-8A2BE2.svg)](https://github.com/xming521/WeClone)
 
 **中文** · [**English** →](README.en.md)
@@ -17,220 +18,178 @@
 </div>
 
 <!-- 有截图后取消注释，并把图片放到 docs/images/demo.png
-![效果演示](docs/images/demo.png)
+<p align="center"><img src="docs/images/demo.png" width="780" alt="微信里的数字分身"></p>
 -->
 
----
+> [!TIP]
+> **这是什么？** 从你的微信 / Telegram 聊天记录里学说话方式，然后以你的口吻在微信或网页里回消息。
+> 全流程走 API（默认 DeepSeek），**不需要 NVIDIA 显卡**。
 
-> 本目录是 [WeClone](https://github.com/xming521/WeClone) 的子项目：
-> 复用其数据解析能力，把打分 / 人设 / 对话换成纯 API 实现，无需 GPU。
-> 独立仓库：https://github.com/lhongjie70-sudo/weclone-cloud
->
 > **在 WeClone 仓库内使用**：父目录就是 WeClone，直接 `uv sync`，
-> 不需要运行 `setup.cmd`（那会再克隆一份 WeClone），下文路径里的 `app\` 换成 `..\`。
-
-把「聊天记录 → 清洗打分 → 人设/微调 → 微信或网页分身」整条链路做成**纯 API 驱动、无需显卡**的一键方案。
-
-基于 [WeClone](https://github.com/xming521/WeClone) 的完整副本改造：数据加工、风格总结、对话代理全部走 OpenAI 兼容 API（默认 DeepSeek），推理侧只跑一个带鉴权的本机代理。**没有 GPU 也能让「另一个你」在微信里回消息。**
-
-```
-微信小号 ──协议──> WeChatPadPro ──WS──> LangBot ──HTTP──> 本机分身代理 ──> DeepSeek
-                                                          └ 人设注入 · 关思考 · 拟人延迟
-```
+> 不需要运行 `setup.cmd`（那会再克隆一份），下文路径里的 `app\` 换成 `..\`。
 
 ---
 
-## 特性
+## ✨ 为什么用它
 
-- **零显卡**：打分、人设、对话全部 API 化；本地只跑一个轻量 FastAPI 代理。
-- **真实语料驱动**：从你的微信/Telegram 导出里抽高分对话，生成「说话风格规则 + 真实示例」的人设提示词。
-- **可选的云端微调**：导出 OpenAI 微调格式 JSONL，交给支持 `/fine_tuning/jobs` 的平台；DeepSeek 无微调接口，走导出路线。
-- **一套接口，多个前端**：OpenAI 兼容 `/v1/chat/completions`，可直接接 LangBot、AstrBot、任何 OpenAI SDK，也自带网页聊天。
-- **微信落地**：Docker 跑 LangBot + WeChatPadPro，含两处适配器补丁（去重、异常修复），并做了拟人节奏与防封配置。
-- **可复现**：打分有内容寻址缓存和断点续跑，导出带 `manifest.json`（条数、丢弃原因、token、sha256）。
+| 传统方案 | weclone-cloud |
+|---|---|
+| 本地 vLLM 打分，只支持 Linux + NVIDIA | 打分走 API，Windows 笔记本也能跑完 |
+| 必须微调 7B 模型，显存 24GB 起 | 人设提示词先跑起来，想训练再导出 JSONL |
+| 推理要本地加载权重 | 本机只跑一个轻量代理，模型在云端 |
+| 只管训练，不管怎么用 | 附 LangBot + 微信协议端方案，含封号规避 |
 
----
+## 🎯 它能做什么
 
-## 测试版本（升级前先对照）
+| 能力 | 说明 |
+|---|---|
+| 🗂️ **数据加工** | 复用 WeClone 的 `make-dataset`：时间窗合并、问答配对、PII 脱敏 |
+| ⭐ **智能打分** | 1–5 分评估对话质量，并发、断点续跑、结果缓存，先 `--dry-run` 看花费 |
+| 🎭 **人设生成** | 从高分样本提炼「说话风格规则 + 真实对话示例」，无需训练 |
+| 🔌 **OpenAI 兼容** | 一个 `/v1/chat/completions`，接 LangBot / AstrBot / 任何 SDK |
+| 💬 **微信落地** | Docker 跑 LangBot + WeChatPadPro，含适配器补丁与拟人延迟 |
+| 🧾 **可复现** | 导出带 `manifest.json`：条数、丢弃原因、token、文件 sha256 |
 
-| 组件 | 已验证版本 | 固定方式 |
-|---|---|---|
-| WeClone | `master@d4af5ba`（2026-10-18） | 子目录跟随父仓库 |
-| LangBot | **v4.11.1** | `start-langbot-docker.cmd`；镜像建议改成具体 tag |
-| WeChatPad-Docker | commit `c6d1b7a` | `tools/prepare_wechatpad.ps1 -Ref`（已默认钉住） |
-| Python | 3.12.x | `.venv` |
-
-升级任何一项后，按 [维护手册](docs/maintenance.md) 第三节逐项复验（适配器补丁、compose 挂载、协议端接口）。
-
----
-
-## 快速开始（只有分身，3 分钟）
-
-### 小白三步（双击即用）
-
-1. 双击 **`setup.cmd`** —— 自动拉取 WeClone、建虚拟环境、装依赖，并生成 `secrets.local.cmd`；
-2. 用记事本打开 `secrets.local.cmd`，把 `WECLONE_API_KEY` 填成你的 DeepSeek key；
-3. 双击 **`start-chat.cmd`** —— 自动打开 <http://127.0.0.1:8010/>。
-
-接微信：双击 **`start-wechat.cmd`**（需 Docker Desktop），剩下几步在 [安装教程](docs/install.md) 第 5、6 节。
-
----
-
-下面的命令等价于上面三步，适合命令行用户。
-
-前置：Windows + PowerShell、Python 3.12、[uv](https://docs.astral.sh/uv/)、一把 DeepSeek API key。
+## 🚀 三步开始
 
 ```powershell
-git clone https://github.com/<your-name>/weclone-cloud.git
+git clone https://github.com/lhongjie70-sudo/weclone-cloud.git
 cd weclone-cloud
 
-# 1) 生成配置 + 安装依赖（轻量模式，约 300MB）
-.\bootstrap.ps1 -Install
+.\setup.cmd            # 拉取 WeClone、建 .venv、装依赖
+                       # 网络不好：setup.cmd --pypi  或  setup.cmd --aliyun
 
-# 2) 写入密钥（也可以填进 secrets.local.cmd，启动脚本会自动加载）
-$env:WECLONE_API_KEY   = "sk-..."
-$env:WECLONE_SERVE_KEY = "local-key"
+notepad secrets.local.cmd   # 填 WECLONE_API_KEY=sk-...
 
-# 3) 自检
-.\.venv\Scripts\python.exe -m weclone_cloud.cli doctor
+.\start-chat.cmd       # 自动打开 http://127.0.0.1:8010/
 ```
 
-生成人设并启动：
+接微信（需要 Docker Desktop）：
 
 ```powershell
-# 从高分样本里挑 6 段真实对话，让模型总结你的说话风格
-.\.venv\Scripts\python.exe -m weclone_cloud.cli persona `
-  --input app\dataset\res_csv\sft\sft-my.scored.json --examples 6
-
-# 启动（网页 + OpenAI 兼容接口）
-.\.venv\Scripts\python.exe -m weclone_cloud.cli serve --persona persona_system.md --port 8010
+.\start-wechat.cmd     # 分身 + 微信协议端 + LangBot 一起拉起
 ```
 
-打开 <http://127.0.0.1:8010/> 即可对话。
+详细步骤见 **[安装教程](docs/install.md)**，微信扫码见 **[运维手册](docs/runbook.md)** 第三节。
 
-> 还没有数据？见 [安装教程](docs/install.md) 第二节：用 WeClone 的 `make-dataset` 把你的导出转成 `sft-my.json`。
+## 🧭 数据怎么走
 
----
-
-## 快速开始（接入微信）
-
-需要 Docker Desktop。完整步骤见 **[docs/install.md](docs/install.md)**，这里只列骨架：
-
-```powershell
-# 1) 分身（必须监听 0.0.0.0，容器才够得着）
-.\start-persona-docker.cmd
-
-# 2) 微信协议端
-cd wechatpad-src; docker compose up -d; cd ..
-
-# 3) LangBot（首次会自动 clone 并打补丁）
-.\start-langbot-docker.cmd
+```
+微信 / Telegram 导出
+        │  weclone-cli make-dataset      （WeClone：合并、配对、脱敏）
+        ▼
+dataset/res_csv/sft/sft-my.json
+        │  weclone-cloud score           （API 打分，可续跑）
+        ▼
+sft-my.scored.json
+        │  weclone-cloud persona         （风格规则 + 示例）
+        ▼
+persona_system.md
+        │  weclone-cloud serve           （鉴权代理：人设 / 关思考 / 延迟）
+        ▼
+http://127.0.0.1:8010/v1  ──►  LangBot  ──►  WeChatPad  ──►  微信
 ```
 
-然后在 <http://localhost:5300> 里：
+## 🛠️ 命令
 
-| 配置项 | 值 |
-|---|---|
-| 模型 Base URL | `http://host.docker.internal:8010/v1` |
-| 模型 API Key | 分身窗口打印的 `serve key` |
-| 模型名 | `deepseek-flash` |
-| 工具使用 | 关 |
-| 系统提示词 | 留空（服务端强制注入人设） |
-
-微信适配器（WeChatPad）的四个字段、扫码登录、掉线重连、封号规避，都在 [docs/runbook.md](docs/runbook.md)。
-
----
-
-## 命令参考
-
-| 命令 | 作用 | 关键参数 |
+| 命令 | 作用 | 常用参数 |
 |---|---|---|
-| `doctor` | 检查配置/密钥/连通性/任务状态 | — |
-| `score` | API 打分，写回 `score` / `score_reason` | `--min-score --rescore --limit --workers --dry-run` |
-| `export` | 转 OpenAI JSONL，去重、切分验证集 | `--system --min-score --val-ratio --max-tokens` |
-| `finetune` | 上传 + 建任务 + 轮询（`generic` 只导出提示） | `--train --val --model --epochs --no-watch` |
-| `status` / `cancel` | 查询 / 取消微调任务 | `--job-id --watch` |
-| `persona` | 从高分样本生成人设提示词 | `--input --out --examples --min-score` |
-| `serve` | OpenAI 兼容代理 + 网页 | `--host --port --model --persona` |
-| `pipeline` | score + export 串联 | `--input --out-dir --min-score` |
+| `doctor` | 自检配置 / 密钥 / 连通性 | — |
+| `score` | API 打分并写回 | `--dry-run --limit --workers --rescore` |
+| `export` | 转 JSONL、去重、切验证集 | `--min-score --val-ratio --max-tokens` |
+| `persona` | 生成 `persona_system.md` | `--examples --min-score` |
+| `serve` | 启动分身代理 + 网页 | `--host --port --persona` |
+| `finetune` / `status` | 云端微调任务（generic 只导出） | `--train --val --no-watch` |
+| `pipeline` | score + export 串联 | `--input --out-dir` |
 
-使用 `python -m weclone_cloud.cli <命令>` 或安装后的 `weclone-cloud <命令>`。
+> 用 `python -m weclone_cloud.cli <命令>`，或安装后的 `weclone-cloud <命令>`。
 
----
+## 📚 文档
 
-## 目录结构
+| | |
+|---|---|
+| 📥 [install.md](docs/install.md) | 从零安装：环境、数据、分身、Docker、微信 |
+| 🔧 [runbook.md](docs/runbook.md) | 日常启动、断电恢复、微信重登、故障速查 |
+| 🧱 [architecture.md](docs/architecture.md) | 与 WeClone 的映射、设计取舍 |
+| 🧩 [providers.md](docs/providers.md) | OpenAI / 百炼 / 本地模型配置 |
+| 🛰️ [maintenance.md](docs/maintenance.md) | **长期维护**：版本矩阵、升级复验、发布流程 |
+
+## ✅ 测试过的版本
+
+| 组件 | 版本 | 固定方式 |
+|---|---|---|
+| WeClone | `master@d4af5ba` | 子目录跟随父仓库 |
+| LangBot | **v4.11.1** | `start-langbot-docker.cmd` |
+| WeChatPad-Docker | `c6d1b7a` | `prepare_wechatpad.ps1 -Ref`（已默认钉住） |
+| Python | 3.12.x | `.venv` |
+
+升级任何一项后，按 [maintenance.md](docs/maintenance.md) 第三节复验。
+
+<details>
+<summary><b>📁 目录结构</b>（点击展开）</summary>
 
 ```
 weclone-cloud/
 ├─ weclone_cloud/           # 核心包（不修改 WeClone 源码）
-│  ├─ config.py             # pydantic 配置、密钥来源、计价
-│  ├─ api.py                # OpenAI 兼容客户端（重试/缓存/思考开关/JSON 降级）
-│  ├─ prompts.py            # 打分 rubric 与 JSON schema
+│  ├─ config.py             # 配置、密钥来源、计价
+│  ├─ api.py                # OpenAI 兼容客户端（重试/缓存/关思考/JSON 降级）
+│  ├─ prompts.py            # 打分 rubric 与 schema
 │  ├─ scoring.py            # 并发打分、断点续跑、报告
 │  ├─ dataset.py            # JSONL 导出、去重、切分、manifest
 │  ├─ finetune.py           # /files + /fine_tuning/jobs
-│  ├─ serve.py              # 鉴权代理：人设注入、关思考、剥离 reasoning、拟人延迟
+│  ├─ serve.py              # 鉴权代理：人设注入、剥离 reasoning、拟人延迟
 │  └─ web/index.html        # 自带聊天页
-├─ tools/                   # 数据转换、启动器、补丁脚本
-│  ├─ from_alpha.py         # Alpha 导出 → WeClone CSV
-│  ├─ inspect_data.py       # 识别数据形态
-│  ├─ launch.py             # 一键启动 + 日志分流
-│  ├─ prepare_langbot.ps1   # 拉取 LangBot + 国内镜像可选
-│  ├─ prepare_wechatpad.ps1 # 拉起 WeChatPadPro
-│  └─ fix_langbot_compose.py# 修 Windows 挂载路径
+├─ tools/                   # 数据转换、启动器、补丁
 ├─ tests/                   # 无网络单测（httpx.MockTransport）
-├─ docs/
-│  ├─ install.md            # 从零安装（Windows 全流程）
-│  ├─ runbook.md            # 运维手册：启动顺序、重启恢复、故障速查
-│  ├─ architecture.md       # 与 WeClone 的映射、设计取舍
-│  ├─ providers.md          # 各平台配置示例
-│  ├─ deploy.md             # 部署
-│  └─ langbot.md            # LangBot 接入
-├─ start-*.cmd / stop-*.cmd # 一键脚本
+├─ docs/                    # 安装 / 运维 / 维护 / 架构 / 平台
+├─ setup.cmd  start-chat.cmd  start-wechat.cmd
 ├─ bootstrap.ps1            # 复制 WeClone + 装依赖
 └─ cloud.example.jsonc      # 配置模板
 ```
 
----
+</details>
 
-## 文档
+<details>
+<summary><b>❓ 常见问题</b>（点击展开）</summary>
 
-| 文档 | 内容 |
-|---|---|
-| [docs/install.md](docs/install.md) | 从零安装：环境、数据、分身、Docker、微信 |
-| [docs/runbook.md](docs/runbook.md) | 日常启动、断电恢复、微信重登、故障速查 |
-| [docs/architecture.md](docs/architecture.md) | 与 WeClone 的对应关系、关键取舍 |
-| [docs/providers.md](docs/providers.md) | OpenAI / 百炼 / 本地模型等配置 |
-| [docs/langbot.md](docs/langbot.md) | LangBot 接入细节 |
-| [docs/maintenance.md](docs/maintenance.md) | **长期维护**：版本矩阵、升级步骤、回归检查、发布流程 |
+**Q：没有显卡真的能跑吗？**
+能。打分、人设、对话全走 API，本地只跑 FastAPI 代理。唯一需要显卡的是"本机 LoRA 训练"，可选。
 
----
+**Q：DeepSeek 能微调吗？**
+不能，官方没有 `/fine_tuning/jobs`。本项目用 `provider=generic` 导出 JSONL，需要训练时交给支持微调的平台。
 
-## 已知限制
+**Q：不训练，效果够用吗？**
+能对齐句长、语气词、口头禅和标点习惯；稳定性不如微调。建议先用 `persona` 验证数据质量。
 
-- **DeepSeek 没有微调接口**：`finetune` 对它只能导出 JSONL；要训练权重请换支持微调的平台，或用 WeClone 原生 LoRA（需要 GPU）。
-- `persona` 只是提示词模仿，**不改权重**，稳定性不如微调。
-- 只支持文本；带图片的样本在导出时丢弃。
-- 微信协议端（WeChatPadPro）有封号风险，**仅限小号自用**，不要做营销、不要群发。
-- 未内置速率限制；对外提供服务请自行加网关。
+**Q：会封微信吗？**
+个人号协议端有风险。用**小号**、低频、别群发；项目里已加 2–4 秒随机延迟、单条回复、去重。
 
----
+**Q：和 WeClone 什么关系？**
+本仓库是它的子项目，复用数据解析、替换后段链路，已作为 [PR #253](https://github.com/xming521/WeClone/pull/253) 合并进上游。
 
-## 免责声明
+</details>
 
-- 本项目仅供个人学习与自用。使用他人聊天记录前，**必须取得对方同意**。
-- 微信个人号自动化可能违反平台协议并导致封号，风险自负。
-- AI 生成内容应保留身份标识，不得用于冒充他人实施欺诈。
+## ⚠️ 已知限制
+
+- 只支持文本；带图片的样本在导出时丢弃
+- `persona` 不改权重，纯提示词模仿
+- 微信部分依赖 Docker，exe 无法内置容器
+- 未内置限流，对外暴露请自行加网关
+
+## 📜 声明
+
+- 仅供个人学习与自用；使用他人聊天记录前**必须取得同意**
+- 微信自动化可能违反平台协议，风险自负
+- AI 生成内容应保留身份标识，不得用于冒充他人
 
 ## License
 
-AGPL-3.0，与上游 WeClone 保持一致。
-独立仓库：https://github.com/lhongjie70-sudo/weclone-cloud
+AGPL-3.0，与上游 [WeClone](https://github.com/xming521/WeClone) 一致。
 
 ---
 
 <div align="center">
 
-[**↑ 回到顶部**](#weclone-cloud) · [**English** →](README.en.md)
+[**↑ 回到顶部**](#-weclone-cloud) · [**English** →](README.en.md)
 
 </div>
