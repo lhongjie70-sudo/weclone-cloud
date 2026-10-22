@@ -136,11 +136,15 @@ def doctor(ctx: click.Context) -> None:
     table.add_row("微调服务", "·", f"{config.finetune.provider} @ {config.finetune.base_url}")
     table.add_row("微调基座", "·", config.finetune.base_model)
 
-    try:
-        config.finetune.resolved_key
-        table.add_row("微调 Key", "OK", f"env:{config.finetune.api_key_env}")
-    except ConfigError as exc:
-        table.add_row("微调 Key", "ERR", str(exc))
+    if config.finetune.provider == "generic":
+        # generic 只导出 JSONL，不需要任何微调 key，别把用户吓一跳
+        table.add_row("微调 Key", "·", "generic 模式不需要（只导出 JSONL）")
+    else:
+        try:
+            config.finetune.resolved_key
+            table.add_row("微调 Key", "OK", f"env:{config.finetune.api_key_env}")
+        except ConfigError as exc:
+            table.add_row("微调 Key", "ERR", str(exc))
 
     try:
         serve_key = config.serve.resolved_key
@@ -588,13 +592,11 @@ def persona(
         return chosen
 
     picked = pick(min_score)
-    used_threshold = min_score
     if not picked:
         # 样本少或打分偏严时自动降阈值，别让人设生成直接失败
         for threshold in range(min_score - 1, 1, -1):
             picked = pick(threshold)
             if picked:
-                used_threshold = threshold
                 console.print(f"[yellow]! {min_score} 分以上样本不足，自动退到 ≥{threshold} 分[/yellow]")
                 break
     if not picked:
@@ -723,7 +725,7 @@ def pipeline(
 
     apply_outcomes(records, outcomes)
     out_dir.mkdir(parents=True, exist_ok=True)
-    scored_path = write_json(out_dir / "scored.json", records)
+    write_json(out_dir / "scored.json", records)
     report = build_report(records, outcomes, min_score=threshold, model=config.api.model)
     write_report(out_dir / "score_report.json", report)
 
