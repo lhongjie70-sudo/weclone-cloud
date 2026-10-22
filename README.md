@@ -12,7 +12,7 @@
 [![GPU](https://img.shields.io/badge/GPU-not%20required-brightgreen.svg)](#)
 [![Based on WeClone](https://img.shields.io/badge/based%20on-WeClone-8A2BE2.svg)](https://github.com/xming521/WeClone)
 
-**中文** | [English](#english)
+[**中文**](#chinese) · [**English**](#english)
 
 </div>
 
@@ -49,7 +49,11 @@ cd weclone-cloud
 
 Docs: [install](docs/install.md) · [runbook](docs/runbook.md) · [maintenance](docs/maintenance.md)
 
+[**→ 中文版**](#chinese)
+
 ---
+
+<a id="chinese"></a>
 
 ## 中文
 
@@ -257,3 +261,11 @@ weclone-cloud/
 
 AGPL-3.0，与上游 WeClone 保持一致。
 独立仓库：https://github.com/lhongjie70-sudo/weclone-cloud
+
+---
+
+<div align="center">
+
+[**↑ 回到顶部**](#weclone-cloud) · [**English**](#english)
+
+</div>
